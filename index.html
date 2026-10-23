@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Macro Tracker</title>
+<meta name="description" content="Registro diario de calorías, macros y agua.">
+<meta name="theme-color" content="#F3F4F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B0B0F" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Macros">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="hrow">
+      <div>
+        <h1 id="title">Hoy</h1>
+        <div class="date" id="date"></div>
+      </div>
+      <div class="hbtns">
+        <button class="iconbtn" id="themeBtn" aria-label="Cambiar tema"></button>
+        <button class="iconbtn" id="settingsBtn" aria-label="Ajustes">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+        </button>
+      </div>
+    </div>
+    <nav class="seg" aria-label="Navegar días">
+      <button id="prevBtn"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 2.5 4 6l3.5 3.5"/></svg>Ant.</button>
+      <button id="todayBtn">Hoy</button>
+      <button id="nextBtn">Sig.<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5 8 6 4.5 9.5"/></svg></button>
+    </nav>
+  </header>
+
+  <main class="stack">
+    <section class="card hero" aria-label="Calorías">
+      <div class="label">Calorías</div>
+      <div class="ringwrap">
+        <svg viewBox="0 0 216 216" aria-hidden="true">
+          <defs>
+            <linearGradient id="gcal" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" class="stop-a"/>
+              <stop offset="1" class="stop-b"/>
+            </linearGradient>
+          </defs>
+          <circle cx="108" cy="108" r="94" fill="none" stroke="var(--track)" stroke-width="16"/>
+          <circle id="calRing" class="prog ring-glow" cx="108" cy="108" r="94" fill="none" stroke="url(#gcal)" stroke-width="16" stroke-linecap="round"/>
+        </svg>
+        <div class="ringc">
+          <div class="big num" id="calNum">0</div>
+          <div class="of num" id="calOf"></div>
+          <div class="left num" id="calLeft"></div>
+        </div>
+      </div>
+      <div class="herostats">
+        <div class="hs"><b class="num" id="hsItems">0</b><span>alimentos</span></div>
+        <div class="hs"><b class="num" id="hsPct">0%</b><span>del objetivo</span></div>
+        <div class="hs"><b class="num" id="hsAvg">—</b><span>media 7 días</span></div>
+      </div>
+    </section>
+
+    <section class="card macros" aria-label="Macros" id="macros"></section>
+
+    <section class="card water" aria-label="Agua">
+      <div class="wrow">
+        <div class="drop"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.7S5.5 9.6 5.5 14.2a6.5 6.5 0 0 0 13 0C18.5 9.6 12 2.7 12 2.7Z"/></svg></div>
+        <div class="winfo"><b class="num" id="wVal">0 L</b> <span class="num" id="wGoal"></span></div>
+        <div class="wbtns">
+          <button class="wbtn" id="wMinus" aria-label="Quitar 250 ml">−</button>
+          <button class="wbtn plus" id="wPlus" aria-label="Añadir 250 ml">+</button>
+        </div>
+      </div>
+      <div class="bar"><i id="wBar"></i></div>
+      <div class="wnote">Cada toque son 250 ml (un vaso).</div>
+    </section>
+
+    <section class="card hist" aria-label="Últimos 7 días">
+      <div class="hhead"><div class="label">Últimos 7 días</div><span class="num" id="histGoal"></span></div>
+      <div id="chart"></div>
+    </section>
+
+    <section class="diary" id="diary" aria-label="Diario"></section>
+
+    <footer class="foot">Soy un asistente de IA, no un profesional médico. Consulta con tu médico de cabecera antes de empezar cualquier dieta nueva.</footer>
+  </main>
+
+  <button class="fab" id="fab" aria-label="Añadir alimento">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+</div>
+
+<!-- Add food -->
+<div class="sheet" id="addSheet" role="dialog" aria-modal="true" aria-labelledby="addTitle" hidden>
+  <div class="sheet-panel tall">
+    <div class="sheet-head">
+      <h2 id="addTitle">Añadir alimento</h2>
+      <button class="close" data-close aria-label="Cerrar"><svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l6 6M9 3 3 9"/></svg></button>
+    </div>
+    <div class="chips" id="addMeal" role="radiogroup" aria-label="Comida"></div>
+    <div class="searchbar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" inputmode="search" autocomplete="off" placeholder="Buscar: pollo, arroz, yogur griego…" aria-label="Buscar alimento">
+    </div>
+    <div class="actions">
+      <button class="pill ghost" id="scanBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M11 8v8M14 8v8M17 8v8"/></svg>Escanear código</button>
+      <button class="pill ghost" id="quickBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></svg>Añadir rápido</button>
+    </div>
+    <div class="results" id="results"></div>
+  </div>
+</div>
+
+<!-- Food detail -->
+<div class="sheet" id="foodSheet" role="dialog" aria-modal="true" aria-labelledby="fdName" hidden>
+  <div class="sheet-panel">
+    <div class="sheet-head">
+      <div class="fd-title">
+        <h2 id="fdName"></h2>
+        <div class="fd-sub" id="fdSub"></div>
+      </div>
+      <button class="close" data-close aria-label="Cerrar"><svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l6 6M9 3 3 9"/></svg></button>
+    </div>
+    <div class="fd-preview">
+      <div><b class="num" id="fdKcal">0</b><span>cal</span></div>
+      <div><b class="num" id="fdP">0</b><span>proteína</span></div>
+      <div><b class="num" id="fdC">0</b><span>carbos</span></div>
+      <div><b class="num" id="fdF">0</b><span>grasa</span></div>
+    </div>
+    <div class="fd-amount">
+      <label class="label" for="fdQty">Cantidad</label>
+      <div class="qtyrow">
+        <button class="wbtn" id="fdMinus" aria-label="Menos">−</button>
+        <input id="fdQty" type="number" inputmode="decimal" min="0" step="any">
+        <button class="wbtn" id="fdPlusBtn" aria-label="Más">+</button>
+      </div>
+      <div class="chips wrap" id="fdUnits" role="radiogroup" aria-label="Unidad"></div>
+    </div>
+    <div class="label">Comida</div>
+    <div class="chips" id="fdMeal" role="radiogroup" aria-label="Comida"></div>
+    <div class="fd-per" id="fdPer"></div>
+    <button class="pill primary big-btn" id="fdSave">Añadir</button>
+  </div>
+</div>
+
+<!-- Quick add -->
+<div class="sheet" id="quickSheet" role="dialog" aria-modal="true" aria-labelledby="quickTitle" hidden>
+  <div class="sheet-panel">
+    <div class="sheet-head">
+      <h2 id="quickTitle">Añadir rápido</h2>
+      <button class="close" data-close aria-label="Cerrar"><svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l6 6M9 3 3 9"/></svg></button>
+    </div>
+    <form id="quickForm" class="form" novalidate>
+      <label class="field"><span>Nombre</span><input id="qkName" type="text" placeholder="Ej. Tacos al pastor (3)" required></label>
+      <label class="field"><span>Porción</span><input id="qkServing" type="text" placeholder="Ej. 1 plato"></label>
+      <div class="grid4">
+        <label class="field"><span>Calorías</span><input id="qkCal" type="number" inputmode="decimal" min="0" step="any" required></label>
+        <label class="field"><span>Proteína g</span><input id="qkP" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label class="field"><span>Carbos g</span><input id="qkC" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label class="field"><span>Grasa g</span><input id="qkF" type="number" inputmode="decimal" min="0" step="any"></label>
+      </div>
+      <div class="label">Comida</div>
+      <div class="chips" id="qkMeal" role="radiogroup" aria-label="Comida"></div>
+      <label class="check"><input id="qkSave" type="checkbox" checked> Guardar en Mis alimentos</label>
+      <div class="formmsg" id="qkMsg" role="status"></div>
+      <button class="pill primary big-btn" type="submit">Añadir</button>
+    </form>
+  </div>
+</div>
+
+<!-- Barcode -->
+<div class="sheet" id="scanSheet" role="dialog" aria-modal="true" aria-labelledby="scanTitle" hidden>
+  <div class="sheet-panel">
+    <div class="sheet-head">
+      <h2 id="scanTitle">Escanear código</h2>
+      <button class="close" data-close aria-label="Cerrar"><svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l6 6M9 3 3 9"/></svg></button>
+    </div>
+    <div class="scanbox">
+      <video id="scanVideo" playsinline muted></video>
+      <div class="scanframe" aria-hidden="true"></div>
+    </div>
+    <div class="formmsg" id="scanMsg" role="status">Apunta la cámara al código de barras.</div>
+    <form id="codeForm" class="coderow">
+      <input id="codeInput" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="O escribe el número del código" aria-label="Número del código de barras">
+      <button class="pill primary" type="submit">Buscar</button>
+    </form>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="sheet" id="settingsSheet" role="dialog" aria-modal="true" aria-labelledby="setTitle" hidden>
+  <div class="sheet-panel tall">
+    <div class="sheet-head">
+      <h2 id="setTitle">Ajustes</h2>
+      <button class="close" data-close aria-label="Cerrar"><svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l6 6M9 3 3 9"/></svg></button>
+    </div>
+    <div class="scrollarea">
+      <form id="goalsForm" class="form" novalidate>
+        <div class="label">Objetivos diarios</div>
+        <div class="grid2">
+          <label class="field"><span>Calorías</span><input id="gCal" type="number" inputmode="numeric" min="0"></label>
+          <label class="field"><span>Agua (L)</span><input id="gWater" type="number" inputmode="decimal" min="0" step="0.1"></label>
+          <label class="field"><span>Proteína g</span><input id="gP" type="number" inputmode="numeric" min="0"></label>
+          <label class="field"><span>Carbos g</span><input id="gC" type="number" inputmode="numeric" min="0"></label>
+          <label class="field"><span>Grasa g</span><input id="gF" type="number" inputmode="numeric" min="0"></label>
+        </div>
+        <div class="formmsg" id="goalsMsg" role="status"></div>
+        <button class="pill primary" type="submit">Guardar objetivos</button>
+      </form>
+
+      <div class="divider"></div>
+      <div class="form">
+        <div class="label">Copia de seguridad</div>
+        <p class="note">Tus datos viven en este teléfono. Copia tu código para guardarlo o para pasarlo a otro dispositivo. Para restaurar o importar un código que te dé Claude, pégalo abajo.</p>
+        <button class="pill primary" id="copyCode">Copiar código</button>
+        <textarea id="codeBox" placeholder="Pega aquí un código MT1:… o MTA:…" spellcheck="false" aria-label="Código de guardado"></textarea>
+        <button class="pill ghost" id="importCode">Importar código</button>
+        <div class="formmsg" id="backupMsg" role="status"></div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="form">
+        <div class="label">Borrar datos</div>
+        <p class="note">Elimina todo tu diario, agua, recientes y Mis alimentos de este teléfono.</p>
+        <button class="pill danger" id="wipeBtn">Borrar todo</button>
+        <div class="confirm" id="wipeConfirm" hidden>
+          <span>¿Seguro? No se puede deshacer.</span>
+          <button class="pill danger" id="wipeYes">Sí, borrar</button>
+          <button class="pill ghost" id="wipeNo">Cancelar</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="credits">
+        <p><b>Base de alimentos:</b> USDA National Nutrient Database for Standard Reference, Release 28 (8.789 alimentos, dominio público). Nombres traducidos automáticamente al español.</p>
+        <p><b>Productos de marca y códigos de barras:</b> <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a>, base colaborativa con licencia ODbL. Requiere conexión.</p>
+        <p>Soy un asistente de IA, no un profesional médico. Consulta con tu médico de cabecera antes de empezar cualquier dieta nueva.</p>
+        <p class="ver" id="ver"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"><span id="toastMsg"></span><button id="toastAction" hidden>Deshacer</button></div>
+
+<script src="js/foods.js"></script>
+<script src="js/off.js"></script>
+<script src="js/scanner.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
