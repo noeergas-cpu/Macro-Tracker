@@ -1,5 +1,5 @@
 // Offline support: app files and the food database are cached; Open Food Facts always goes to the network.
-const CACHE = "mt-v1";
+const CACHE = "mt-v2";
 const SHELL = [
   "./", "index.html", "css/app.css", "js/foods.js", "js/off.js", "js/scanner.js", "js/app.js",
   "data/foods.json?v=1", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png",

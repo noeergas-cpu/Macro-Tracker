@@ -11,7 +11,7 @@ App web para registrar calorías, macros (proteína, carbohidratos, grasa) y agu
 - **Escáner de código de barras** con la cámara, o escribiendo el número.
 - **Añadir rápido** para cualquier comida con sus calorías y macros, y **Mis alimentos** para guardarla.
 - Anillo de calorías, anillos de macros, agua, historial de 7 días y diario por comida (Desayuno, Comida, Cena, Snacks). Toca un alimento del diario para cambiar la cantidad.
-- Objetivos editables en Ajustes. Por defecto: 2110 cal, 179 g de proteína, 207 g de carbohidratos, 63 g de grasa y 3,7 L de agua.
+- Objetivos editables en Ajustes. Los macros se fijan como porcentaje de tus calorías (proteína y carbohidratos 4 cal/g, grasa 9 cal/g), así que si cambias las calorías los gramos se recalculan solos. Por defecto: 2110 cal con 34 % proteína (179 g), 39 % carbohidratos (206 g) y 27 % grasa (63 g), y 3,7 L de agua.
 - Modo claro y oscuro.
 - Copia de seguridad con un código (`MT1:…`) para guardar o mover tus datos, e importación de códigos `MTA:…` con comidas que te prepare Claude.
 

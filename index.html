@@ -204,10 +204,28 @@
         <div class="grid2">
           <label class="field"><span>Calorías</span><input id="gCal" type="number" inputmode="numeric" min="0"></label>
           <label class="field"><span>Agua (L)</span><input id="gWater" type="number" inputmode="decimal" min="0" step="0.1"></label>
-          <label class="field"><span>Proteína g</span><input id="gP" type="number" inputmode="numeric" min="0"></label>
-          <label class="field"><span>Carbos g</span><input id="gC" type="number" inputmode="numeric" min="0"></label>
-          <label class="field"><span>Grasa g</span><input id="gF" type="number" inputmode="numeric" min="0"></label>
         </div>
+        <div class="label">Macros (% de tus calorías)</div>
+        <div class="chips" id="presets" aria-label="Repartos rápidos">
+          <button type="button" class="chip" data-split="34,39,27">Mi plan 34/39/27</button>
+          <button type="button" class="chip" data-split="40,30,30">Alta proteína 40/30/30</button>
+          <button type="button" class="chip" data-split="30,40,30">Equilibrado 30/40/30</button>
+          <button type="button" class="chip" data-split="35,25,40">Bajo en carbos 35/25/40</button>
+        </div>
+        <div class="splitbar" aria-hidden="true"><i id="sbP"></i><i id="sbC"></i><i id="sbF"></i></div>
+        <div class="macrorows">
+          <label class="mrow"><span class="dot" style="background:var(--protein)"></span><span class="mname">Proteína</span>
+            <span class="pctin"><input id="gPP" type="number" inputmode="numeric" min="0" max="100" step="1" aria-label="Proteína, porcentaje">%</span>
+            <b class="num" id="gPg"></b></label>
+          <label class="mrow"><span class="dot" style="background:var(--carbs)"></span><span class="mname">Carbos</span>
+            <span class="pctin"><input id="gPC" type="number" inputmode="numeric" min="0" max="100" step="1" aria-label="Carbos, porcentaje">%</span>
+            <b class="num" id="gCg"></b></label>
+          <label class="mrow"><span class="dot" style="background:var(--fat)"></span><span class="mname">Grasa</span>
+            <span class="pctin"><input id="gPF" type="number" inputmode="numeric" min="0" max="100" step="1" aria-label="Grasa, porcentaje">%</span>
+            <b class="num" id="gFg"></b></label>
+        </div>
+        <div class="sumrow num" id="gSum"></div>
+        <p class="note">Los gramos se calculan solos: proteína y carbos tienen 4 cal por gramo y la grasa 9. Si cambias las calorías, los gramos cambian con ellas.</p>
         <div class="formmsg" id="goalsMsg" role="status"></div>
         <button class="pill primary" type="submit">Guardar objetivos</button>
       </form>

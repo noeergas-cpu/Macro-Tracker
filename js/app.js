@@ -1,8 +1,10 @@
 // Macro Tracker app: state, rendering and all interactions. Data lives in this device's localStorage.
 (function () {
-  const VERSION = "1.0.0";
+  const VERSION = "1.1.0";
   const KEY = "mt.v1", THEME_KEY = "mt.theme";
-  const DEFAULT_GOALS = { cal: 2110, p: 179, c: 207, f: 63, water: 3700 };
+  // macros are a share of daily calories: protein and carbs 4 cal/g, fat 9 cal/g
+  const DEFAULT_GOALS = { cal: 2110, pp: 34, pc: 39, pf: 27, water: 3700 };
+  const KCAL_PER_G = { p: 4, c: 4, f: 9 };
   const WATER_STEP = 250;
 
   const MEALS = [
@@ -28,11 +30,32 @@
     return {
       log: Array.isArray(s.log) ? s.log : [],
       water: s.water && typeof s.water === "object" ? s.water : {},
-      goals: { ...DEFAULT_GOALS, ...(s.goals || {}) },
+      goals: normGoals(s.goals),
       recents: Array.isArray(s.recents) ? s.recents : [],
       custom: Array.isArray(s.custom) ? s.custom : [],
     };
   }
+  // accepts current goals ({cal, pp, pc, pf, water}) and the older gram-based ones ({cal, p, c, f, water})
+  function normGoals(g) {
+    g = g && typeof g === "object" ? g : {};
+    const cal = +g.cal > 0 ? +g.cal : DEFAULT_GOALS.cal;
+    const water = +g.water > 0 ? +g.water : DEFAULT_GOALS.water;
+    if (+g.pp >= 0 && +g.pc >= 0 && +g.pf >= 0 && Math.abs(+g.pp + +g.pc + +g.pf - 100) < 0.6) {
+      return { cal, pp: +g.pp, pc: +g.pc, pf: +g.pf, water };
+    }
+    if (+g.p > 0 && +g.c > 0 && +g.f > 0) {
+      const kp = g.p * 4, kc = g.c * 4, kf = g.f * 9, sum = kp + kc + kf;
+      const pp = Math.round(kp / sum * 100), pc = Math.round(kc / sum * 100);
+      return { cal, pp, pc, pf: 100 - pp - pc, water };
+    }
+    return { ...DEFAULT_GOALS, cal, water };
+  }
+  function gramsFor(cal, pct, k) { return cal * pct / 100 / KCAL_PER_G[k]; }
+  function targets() {
+    const g = S.goals;
+    return { cal: g.cal, water: g.water, p: gramsFor(g.cal, g.pp, "p"), c: gramsFor(g.cal, g.pc, "c"), f: gramsFor(g.cal, g.pf, "f") };
+  }
+
   const S = loadState();
   function save() {
     if (!writeLS(KEY, JSON.stringify(S))) toast("No se pudo guardar en este dispositivo. Revisa el espacio o el modo privado.");
@@ -80,7 +103,7 @@
 
   const C_HERO = 2 * Math.PI * 94;
   function render() {
-    const G = S.goals, t = totals(view);
+    const G = targets(), t = totals(view);
     const yest = addDays(today, -1);
     $("title").textContent = view === today ? "Hoy" : view === yest ? "Ayer" : cap(parseD(view).toLocaleDateString("es-ES", { weekday: "long" }));
     $("date").textContent = cap(parseD(view).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: view.slice(0, 4) === today.slice(0, 4) ? undefined : "numeric" }));
@@ -127,7 +150,7 @@
   }
 
   function renderChart() {
-    const G = S.goals;
+    const G = targets();
     const W = 330, H = 150, top = 18, base = 118, side = 6;
     const days = Array.from({ length: 7 }, (_, i) => addDays(view, i - 6));
     const vals = days.map(d => totals(d).cal);
@@ -551,9 +574,39 @@
   }
   function msg(id, text, cls) { $(id).textContent = text; $(id).className = "formmsg " + (cls || ""); }
 
+  function readGoalsForm() {
+    return { cal: +$("gCal").value, pp: +$("gPP").value, pc: +$("gPC").value, pf: +$("gPF").value, water: Math.round(+$("gWater").value * 1000) };
+  }
+  function updateGoalsPreview() {
+    const v = readGoalsForm(), cal = v.cal > 0 ? v.cal : 0, sum = v.pp + v.pc + v.pf;
+    $("gPg").textContent = fmt(gramsFor(cal, v.pp || 0, "p")) + " g";
+    $("gCg").textContent = fmt(gramsFor(cal, v.pc || 0, "c")) + " g";
+    $("gFg").textContent = fmt(gramsFor(cal, v.pf || 0, "f")) + " g";
+    const scale = sum > 0 ? 100 / Math.max(sum, 100) : 0;
+    $("sbP").style.width = (v.pp || 0) * scale + "%";
+    $("sbC").style.width = (v.pc || 0) * scale + "%";
+    $("sbF").style.width = (v.pf || 0) * scale + "%";
+    const ok = Math.abs(sum - 100) < 0.6;
+    $("gSum").textContent = ok ? "Total: 100 %" : `Total: ${fmt1(sum)} %. Ajusta los porcentajes para que sumen 100 %.`;
+    $("gSum").className = "sumrow num" + (ok ? "" : " bad");
+    document.querySelectorAll("#presets .chip").forEach(c => {
+      const [a, b, d] = c.dataset.split.split(",").map(Number);
+      c.setAttribute("aria-pressed", a === v.pp && b === v.pc && d === v.pf);
+    });
+  }
+  ["gCal", "gPP", "gPC", "gPF", "gWater"].forEach(id => $(id).addEventListener("input", () => { msg("goalsMsg", ""); updateGoalsPreview(); }));
+  $("presets").onclick = e => {
+    const b = e.target.closest("[data-split]"); if (!b) return;
+    const [a, c, f] = b.dataset.split.split(",");
+    $("gPP").value = a; $("gPC").value = c; $("gPF").value = f;
+    msg("goalsMsg", "");
+    updateGoalsPreview();
+  };
+
   function openSettings() {
     const G = S.goals;
-    $("gCal").value = G.cal; $("gP").value = G.p; $("gC").value = G.c; $("gF").value = G.f; $("gWater").value = G.water / 1000;
+    $("gCal").value = G.cal; $("gPP").value = G.pp; $("gPC").value = G.pc; $("gPF").value = G.pf; $("gWater").value = G.water / 1000;
+    updateGoalsPreview();
     msg("goalsMsg", ""); msg("backupMsg", "");
     $("wipeConfirm").hidden = true;
     $("ver").textContent = `Versión ${VERSION} · ${Foods.count() ? fmt(Foods.count()) : "8.789"} alimentos sin conexión`;
@@ -562,10 +615,13 @@
   $("settingsBtn").onclick = openSettings;
   $("goalsForm").addEventListener("submit", e => {
     e.preventDefault();
-    const v = { cal: +$("gCal").value, p: +$("gP").value, c: +$("gC").value, f: +$("gF").value, water: Math.round(+$("gWater").value * 1000) };
-    if (Object.values(v).some(x => !(x > 0))) { msg("goalsMsg", "Todos los objetivos deben ser mayores que cero.", "err"); return; }
+    const v = readGoalsForm();
+    if (!(v.cal > 0) || !(v.water > 0)) { msg("goalsMsg", "Las calorías y el agua deben ser mayores que cero.", "err"); return; }
+    if ([v.pp, v.pc, v.pf].some(x => !(x >= 0))) { msg("goalsMsg", "Los porcentajes no pueden ser negativos.", "err"); return; }
+    if (Math.abs(v.pp + v.pc + v.pf - 100) >= 0.6) { msg("goalsMsg", "Los porcentajes deben sumar 100 %.", "err"); return; }
     S.goals = v; save(); render();
-    msg("goalsMsg", "Objetivos guardados.", "ok");
+    const G = targets();
+    msg("goalsMsg", `Guardado: ${fmt(G.cal)} cal · P ${fmt(G.p)} g · C ${fmt(G.c)} g · G ${fmt(G.f)} g.`, "ok");
   });
   $("copyCode").onclick = () => {
     const code = saveCode();
@@ -581,7 +637,7 @@
         if (!Array.isArray(d.log)) throw new Error();
         S.log = d.log.map(i => cleanItem(i, today));
         S.water = d.water && typeof d.water === "object" ? d.water : {};
-        if (d.goals) S.goals = { ...DEFAULT_GOALS, ...d.goals };
+        if (d.goals) S.goals = normGoals(d.goals);
         save(); render();
         msg("backupMsg", `Restaurado: ${S.log.length} alimentos.`, "ok");
       } else if (raw.startsWith("MTA:")) {

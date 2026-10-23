@@ -160,7 +160,7 @@ h1 { margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -.03em; line-
 .chips::-webkit-scrollbar { display: none; }
 .chips.wrap { flex-wrap: wrap; overflow: visible; }
 .chip { height: 34px; padding: 0 14px; border-radius: 999px; background: var(--seg); font-size: 13.5px; font-weight: 600; color: var(--fg-2); white-space: nowrap; transition: background .2s, color .2s; }
-.chip[aria-checked="true"] { background: var(--fg); color: var(--bg); }
+.chip[aria-checked="true"], .chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
 
 .searchbar { display: flex; align-items: center; gap: 8px; background: var(--field); border-radius: 14px; padding: 0 12px; color: var(--fg-3); flex: none; }
 .searchbar input { flex: 1; min-width: 0; height: 46px; border: 0; background: none; outline: none; font-size: 16px; color: var(--fg); }
@@ -220,6 +220,18 @@ h1 { margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -.03em; line-
 .formmsg.ok { color: var(--carbs); } .formmsg.err { color: var(--warn); }
 .note { margin: 0; font-size: 13px; color: var(--fg-2); line-height: 1.45; }
 textarea { width: 100%; min-height: 80px; resize: vertical; border-radius: 12px; border: 1px solid var(--line); background: var(--field); padding: 10px 12px; font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.splitbar { display: flex; height: 10px; border-radius: 99px; overflow: hidden; background: var(--track); gap: 2px; }
+.splitbar i { display: block; height: 100%; transition: width .3s; }
+#sbP { background: var(--protein); } #sbC { background: var(--carbs); } #sbF { background: var(--fat); }
+.macrorows { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.mrow { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--field); }
+.mrow + .mrow { border-top: 1px solid var(--line); }
+.mrow .mname { flex: 1; font-weight: 600; font-size: 14.5px; }
+.pctin { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: var(--fg-2); }
+.pctin input { width: 64px; height: 38px; border-radius: 10px; border: 1px solid var(--line); background: var(--sheet); text-align: center; font-size: 16px; font-weight: 700; color: var(--fg); }
+.mrow b { width: 64px; text-align: right; font-size: 14.5px; }
+.sumrow { font-size: 13px; font-weight: 600; color: var(--fg-2); }
+.sumrow.bad { color: var(--warn); }
 .divider { height: 1px; background: var(--line); flex: none; }
 .confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px; }
 .confirm span { flex-basis: 100%; color: var(--warn); }
