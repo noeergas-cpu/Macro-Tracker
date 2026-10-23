@@ -1,6 +1,6 @@
 // Macro Tracker app: state, rendering and all interactions. Data lives in this device's localStorage.
 (function () {
-  const VERSION = "1.2.0";
+  const VERSION = "1.3.0";
   const KEY = "mt.v1", THEME_KEY = "mt.theme";
   // macros are a share of daily calories: protein and carbs 4 cal/g, fat 9 cal/g
   const DEFAULT_GOALS = { cal: 2110, pp: 34, pc: 39, pf: 27, water: 3700 };
@@ -329,7 +329,8 @@
 
   function row(food, tag) {
     resultMap.set(food.key, food);
-    const per = food.src === "custom" || food.src === "quick" ? food.units[0].l : "100 g";
+    const u0 = food.units[0];
+    const per = u0.g ? "100 g" : u0.l.startsWith("porción") ? "porción" : u0.l;
     return `<button class="row" data-food="${esc(food.key)}">
       <div class="it"><div class="n">${tag ? `<span class="tag ${tag[0]}">${tag[1]}</span>` : ""}${esc(food.name)}</div><div class="s">${esc(food.sub)}</div></div>
       <div class="kc num"><b>${fmt(food.n.kcal)}</b><span>cal / ${esc(per)}</span></div></button>`;
@@ -373,7 +374,7 @@
     h += `<div class="rsec"><div class="label">Productos de marca</div><small><a href="https://world.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a></small></div>`;
     if (q.length < 3) h += `<div class="status">Escribe al menos 3 letras para buscar productos.</div>`;
     else {
-      h += offFoods.map(f => row(f, ["off", "Marca"])).join("");
+      h += offFoods.map(f => { const fx = fixFor(f.code); return !fx ? row(f, ["off", "Marca"]) : mine.includes(fx) ? "" : row(fx, ["mine", "Corregido"]); }).join("");
       if (offState === "loading") h += `<div class="status"><span class="spinner"></span>Buscando productos…</div>`;
       else if (offState === "error") h += `<div class="status">No se pudo conectar con Open Food Facts. <button class="pill ghost more" data-retry>Reintentar</button></div>`;
       else if (offState === "done" && !offFoods.length) h += `<div class="status">Sin productos para “${esc(q)}”.</div>`;
@@ -436,8 +437,14 @@
     $("fdUnits").innerHTML = food.units.map((u, i) => `<button type="button" class="chip" role="radio" data-unit="${i}" aria-checked="${i === unit}">${esc(u.l)}</button>`).join("");
     mealChips("fdMeal", fd.meal, k => { fd.meal = k; });
     const per = food.units[0].g ? "100 g" : food.units[0].l;
-    $("fdPer").textContent = `Por ${per}: ${fmt(food.n.kcal)} cal · P ${fmt1(food.n.p)} g · C ${fmt1(food.n.c)} g · G ${fmt1(food.n.f)} g` +
-      (food.src === "usda" ? " · Fuente: USDA SR28" : food.src === "off" ? " · Fuente: Open Food Facts" : "");
+    $("fdPer").textContent = `Por ${per}: ${fmt(food.n.kcal)} cal · P ${fmt1(food.n.p)} g · C ${fmt1(food.n.c)} g · G ${fmt1(food.n.f)} g`;
+    // an item logged before its label was saved can switch to the saved label data
+    fd.fix = food.src === "off" ? fixFor(codeOf(food)) : null;
+    $("fdSrc").textContent = fd.fix ? "Fuente: Open Food Facts. Ya guardaste los datos de la etiqueta de este producto."
+      : food.src === "usda" ? "Fuente: USDA SR28."
+      : food.src === "off" ? "Fuente: Open Food Facts, una base que llena la gente. Compara con tu etiqueta: si no coincide, corrígelo."
+      : food.fixed ? "Datos que copiaste de la etiqueta." : "Datos que añadiste tú.";
+    $("fdFix").textContent = fd.fix ? "Usar mis datos" : food.src === "off" ? "Corregir con la etiqueta" : "Editar datos";
     $("fdSave").textContent = fd.editId ? "Guardar cambios" : "Añadir";
     updateFood();
     openSheet("foodSheet");
@@ -489,7 +496,7 @@
   };
 
   function snapshot(food) {
-    return { key: food.key, src: food.src, ref: food.ref, name: food.name, sub: food.sub, n: food.n, m: food.m || {}, units: food.units, def: food.def, qty: food.qty };
+    return { key: food.key, src: food.src, ref: food.ref, code: food.code, fixed: food.fixed, name: food.name, sub: food.sub, n: food.n, m: food.m || {}, units: food.units, def: food.def, qty: food.qty };
   }
   function remember(food, u, q) {
     S.recents = [{ food: snapshot(food), u, q: parseFloat(q) || 1, t: Date.now() }, ...S.recents.filter(r => r.food.key !== food.key)].slice(0, 40);
@@ -527,6 +534,76 @@
     };
     openFood(food, { meal: it.meal, editId: it.id, unit: it.food ? it.u : 0, qty: it.food ? it.q : 1 });
   }
+
+  /* ---------- label data: corrections and products missing from Open Food Facts ---------- */
+  function fixFor(code) { return code ? S.custom.find(f => f.code === String(code)) : null; }
+  // barcode of a food; items logged before v1.3.0 only keep it as the Open Food Facts ref
+  function codeOf(food) { return food.code || (food.src === "off" ? food.ref : null); }
+  let fx = null; // { code, meal, editId, brand }
+
+  function openFix(food, opts) {
+    opts = opts || {};
+    fx = { code: (food && codeOf(food)) || opts.code || null, meal: opts.meal || addMeal, editId: opts.editId || null };
+    $("fixForm").reset();
+    $("fxMsg").textContent = "";
+    $("fxSub").textContent = fx.code ? `Código ${fx.code}` : "";
+    if (food) {
+      // prefill with one portion: the unit chosen now, or the first portion, or 100 g
+      const units = food.units, gi = units.findIndex(u => u.g);
+      const cur = fd && fd.food === food ? fd.unit : 0;
+      const ui = units[cur] && !units[cur].g ? cur : units.findIndex(u => !u.g);
+      let k, grams, label;
+      if (ui >= 0) {
+        k = units[ui].f;
+        grams = gi >= 0 ? units[ui].f / units[gi].f : null;
+        label = units[ui].l.replace(/\s*\([\d.,]+\s?g\)$/, "").replace(/^porción · /, "");
+      } else {
+        k = units[gi].f * 100; grams = 100; label = "100 g";
+      }
+      const m = Nutri.scale(food.m, k);
+      $("fxName").value = food.name;
+      $("fxServing").value = label;
+      $("fxGrams").value = grams ? Math.round(grams * 10) / 10 : "";
+      $("fxCal").value = Math.round(food.n.kcal * k);
+      $("fxP").value = round1(food.n.p * k); $("fxC").value = round1(food.n.c * k); $("fxF").value = round1(food.n.f * k);
+      $("fxFib").value = m.fib ?? ""; $("fxSug").value = m.sug ?? ""; $("fxSat").value = m.sat ?? ""; $("fxNa").value = m.na != null ? Math.round(m.na) : "";
+      fx.brand = food.src === "off" ? (food.sub || "").split(" · ")[0] : "";
+      fx.replaces = food.src === "custom" ? food.key : null;
+    }
+    openSheet("fixSheet");
+    setTimeout(() => $(food ? "fxCal" : "fxName").focus(), 250);
+  }
+  $("fdFix").onclick = () => fd.fix
+    ? openFood(fd.fix, { meal: fd.meal, editId: fd.editId, unit: 0, qty: 1 })
+    : openFix(fd.food, { meal: fd.meal, editId: fd.editId });
+
+  $("fixForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const name = $("fxName").value.trim(), cal = parseFloat($("fxCal").value);
+    if (!name || !(cal >= 0)) { $("fxMsg").textContent = "Escribe el nombre y las calorías."; $("fxMsg").className = "formmsg err"; return; }
+    const serving = $("fxServing").value.trim() || "porción";
+    const grams = parseFloat($("fxGrams").value);
+    const n = { kcal: Math.round(cal), p: round1(parseFloat($("fxP").value) || 0), c: round1(parseFloat($("fxC").value) || 0), f: round1(parseFloat($("fxF").value) || 0) };
+    const m = {};
+    [["fib", "fxFib"], ["sug", "fxSug"], ["sat", "fxSat"], ["na", "fxNa"]].forEach(([k, id]) => {
+      const v = parseFloat($(id).value);
+      if (v >= 0) m[k] = Nutri.round(v);
+    });
+    const portion = grams > 0 && !/\d\s*(g|ml)\b/i.test(serving) ? `${serving} (${Math.round(grams * 10) / 10} g)` : serving;
+    const units = grams > 0 ? [{ l: portion, f: 1 }, { l: "g", f: 1 / grams, g: true }] : [{ l: portion, f: 1 }];
+    const food = {
+      key: fx.replaces || "c" + uid(), src: "custom", fixed: true, code: fx.code || undefined, name,
+      sub: [fx.brand, serving, fx.code ? "código " + fx.code : ""].filter(Boolean).join(" · "),
+      n, m, units, def: 0, qty: 1,
+    };
+    S.custom = [food, ...S.custom.filter(f => f.key !== food.key && !(fx.code && f.code === fx.code))];
+    S.recents = S.recents.filter(r => r.food.key !== food.key && !(fx.code && codeOf(r.food) === fx.code));
+    save();
+    closeSheet("fixSheet");
+    closeSheet("foodSheet");
+    openFood(food, { meal: fx.meal, editId: fx.editId, unit: 0, qty: 1 });
+    toast("Guardado en Mis alimentos");
+  });
 
   /* ---------- quick add ---------- */
   function openQuick() {
@@ -586,13 +663,20 @@
     code = String(code).replace(/\D/g, "");
     if (!code) return;
     if (navigator.vibrate) navigator.vibrate(40);
+    const fixed = fixFor(code);
+    if (fixed) {
+      closeSheet("scanSheet");
+      openFood(fixed, { meal: addMeal });
+      return;
+    }
     $("scanMsg").innerHTML = `<span class="spinner"></span>Buscando ${esc(code)} en Open Food Facts…`;
     $("scanMsg").className = "formmsg";
     try {
       const food = await OFF.barcode(code);
       if (!food) {
-        $("scanMsg").textContent = `No encontré el código ${code} (o no tiene calorías). Usa Añadir rápido con los datos de la etiqueta.`;
+        $("scanMsg").innerHTML = `No encontré el código ${esc(code)} o no tiene calorías. <button class="pill ghost more" type="button" id="scanAddLabel">Añadirlo con la etiqueta</button>`;
         $("scanMsg").className = "formmsg err";
+        $("scanAddLabel").onclick = () => { closeSheet("scanSheet"); openFix(null, { code }); };
         return;
       }
       closeSheet("scanSheet");

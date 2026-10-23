@@ -156,6 +156,10 @@
       <div class="nugrid" id="fdNutri"></div>
     </details>
     <div class="fd-per" id="fdPer"></div>
+    <div class="fd-src">
+      <span id="fdSrc"></span>
+      <button class="pill ghost" id="fdFix" type="button">Corregir con la etiqueta</button>
+    </div>
     <button class="pill primary big-btn" id="fdSave">Añadir</button>
   </div>
 </div>
@@ -171,6 +175,39 @@
       <button class="close" data-close aria-label="Cerrar"><svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l6 6M9 3 3 9"/></svg></button>
     </div>
     <div class="scrollarea" id="nuList"></div>
+  </div>
+</div>
+
+<!-- Label data: correct a product or add one that is missing -->
+<div class="sheet" id="fixSheet" role="dialog" aria-modal="true" aria-labelledby="fxTitle" hidden>
+  <div class="sheet-panel">
+    <div class="sheet-head">
+      <div class="fd-title">
+        <h2 id="fxTitle">Datos de la etiqueta</h2>
+        <div class="fd-sub" id="fxSub"></div>
+      </div>
+      <button class="close" data-close aria-label="Cerrar"><svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l6 6M9 3 3 9"/></svg></button>
+    </div>
+    <form id="fixForm" class="form" novalidate>
+      <p class="note">Copia la tabla nutricional del empaque, por porción. Se guarda en Mis alimentos y, si tiene código, se usa la próxima vez que lo escanees.</p>
+      <label class="field"><span>Nombre</span><input id="fxName" type="text" required></label>
+      <div class="grid2">
+        <label class="field"><span>Porción</span><input id="fxServing" type="text" placeholder="Ej. 1 barra"></label>
+        <label class="field"><span>Gramos por porción</span><input id="fxGrams" type="number" inputmode="decimal" min="0" step="any" placeholder="Opcional"></label>
+      </div>
+      <div class="grid4">
+        <label class="field"><span>Calorías</span><input id="fxCal" type="number" inputmode="decimal" min="0" step="any" required></label>
+        <label class="field"><span>Proteína g</span><input id="fxP" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label class="field"><span>Carbos g</span><input id="fxC" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label class="field"><span>Grasa g</span><input id="fxF" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label class="field"><span>Fibra g</span><input id="fxFib" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label class="field"><span>Azúcares g</span><input id="fxSug" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label class="field"><span>Grasa saturada g</span><input id="fxSat" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label class="field"><span>Sodio mg</span><input id="fxNa" type="number" inputmode="decimal" min="0" step="any"></label>
+      </div>
+      <div class="formmsg" id="fxMsg" role="status"></div>
+      <button class="pill primary big-btn" type="submit">Guardar y usar</button>
+    </form>
   </div>
 </div>
 

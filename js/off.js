@@ -12,14 +12,9 @@
       .finally(() => clearTimeout(timer));
   }
 
-  function kcalOf(n) {
-    if (n["energy-kcal_100g"] != null) return +n["energy-kcal_100g"];
-    if (n["energy_100g"] != null) return +n["energy_100g"] / 4.184;
-    if (n["energy-kj_100g"] != null) return +n["energy-kj_100g"] / 4.184;
-    return null;
-  }
-
-  // Open Food Facts stores nutrients per 100 g in grams; convert to the units the app uses
+  // Open Food Facts stores each nutrient twice: per 100 g ("_100g") and, when the label shows it, per serving
+  // ("_serving"). Both are in grams, energy in kJ unless it is "energy-kcal". Labels are per serving, so the
+  // per-serving numbers are used when present: computing them from the 100 g values drifts by rounding.
   const OFF_MICROS = [
     ["fib", "fiber", 1], ["sug", "sugars", 1], ["sat", "saturated-fat", 1], ["mono", "monounsaturated-fat", 1],
     ["poly", "polyunsaturated-fat", 1], ["chol", "cholesterol", 1e3], ["k", "potassium", 1e3], ["ca", "calcium", 1e3],
@@ -29,35 +24,69 @@
     ["b2", "vitamin-b2", 1e3], ["b3", "vitamin-pp", 1e3], ["b5", "pantothenic-acid", 1e3], ["b6", "vitamin-b6", 1e3],
     ["fol", "vitamin-b9", 1e6], ["b12", "vitamin-b12", 1e6], ["chl", "choline", 1e3],
   ];
-  function microsOf(n) {
+
+  function num(v) { const x = parseFloat(v); return x >= 0 && isFinite(x) ? x : null; }
+
+  // value of one nutrient for the chosen base: per serving (sq grams) or per 100 g
+  function getter(n, sq) {
+    return name => {
+      if (sq) {
+        const s = num(n[name + "_serving"]);
+        if (s != null) return s;
+        const h = num(n[name + "_100g"]);
+        return h != null ? h * sq / 100 : null;
+      }
+      return num(n[name + "_100g"]);
+    };
+  }
+
+  function kcalOf(get) {
+    const kcal = get("energy-kcal");
+    if (kcal != null) return kcal;
+    const kj = get("energy-kj") ?? get("energy");
+    return kj != null ? kj / 4.184 : null;
+  }
+
+  function microsOf(get) {
     const m = {};
-    for (const [k, name, mult] of OFF_MICROS) {
-      const v = parseFloat(n[name + "_100g"]);
-      if (v >= 0 && isFinite(v)) m[k] = v * mult;
-    }
-    const na = parseFloat(n["sodium_100g"]), salt = parseFloat(n["salt_100g"]);
-    if (na >= 0) m.na = na * 1e3;
-    else if (salt >= 0) m.na = salt / 2.5 * 1e3;
+    for (const [k, name, mult] of OFF_MICROS) { const v = get(name); if (v != null) m[k] = v * mult; }
+    const na = get("sodium"), salt = get("salt");
+    if (na != null) m.na = na * 1e3;
+    else if (salt != null) m.na = salt / 2.5 * 1e3;
     return m;
   }
 
   function toFood(p) {
     const n = p.nutriments || {};
-    const kcal = kcalOf(n);
     const name = (p.product_name_es || p.product_name || p.generic_name || "").trim();
+    const sq = num(p.serving_quantity) || 0;
+    const hasServing = sq > 0 && Object.keys(n).some(k => k.endsWith("_serving"));
+    const get = getter(n, hasServing ? sq : 0);
+    const kcal = kcalOf(get);
     if (kcal == null || !name) return null;
     const brands = Array.isArray(p.brands) ? p.brands.join(", ") : (p.brands || "");
-    const units = [{ l: "g", f: 0.01, g: true }];
-    const sq = parseFloat(p.serving_quantity);
-    if (sq > 0) units.push({ l: `porción${p.serving_size ? " · " + p.serving_size : ""} (${Math.round(sq)} g)`, f: sq / 100 });
     const pq = parseFloat(String(p.quantity || "").replace(",", "."));
-    if (pq > 0 && /\b(g|ml)\b/i.test(p.quantity || "") && pq !== sq) units.push({ l: `envase · ${p.quantity}`, f: pq / 100 });
+    const pkg = pq > 0 && /\b(g|ml)\b/i.test(p.quantity || "") && pq !== sq;
+    const ss = String(p.serving_size || "").trim();
+    const portion = `porción${ss ? " · " + ss : ""}${/\d\s*(g|ml)\b/i.test(ss) ? "" : ` (${Math.round(sq)} g)`}`;
+    let units, def, qty;
+    if (hasServing) {
+      // base = one serving, as printed on the label
+      units = [{ l: portion, f: 1 }, { l: "g", f: 1 / sq, g: true }];
+      if (pkg) units.push({ l: `envase · ${p.quantity}`, f: pq / sq });
+      def = 0; qty = 1;
+    } else {
+      units = [{ l: "g", f: 0.01, g: true }];
+      if (sq > 0) units.push({ l: portion, f: sq / 100 });
+      if (pkg) units.push({ l: `envase · ${p.quantity}`, f: pq / 100 });
+      def = sq > 0 ? 1 : 0; qty = sq > 0 ? 1 : 100;
+    }
     return {
-      key: "o" + p.code, src: "off", ref: String(p.code), name,
-      sub: [brands.split(",")[0].trim(), p.quantity].filter(Boolean).join(" · ") || "Producto",
-      n: { kcal: Math.round(kcal), p: +(n.proteins_100g || 0), c: +(n.carbohydrates_100g || 0), f: +(n.fat_100g || 0) },
-      m: microsOf(n),
-      units, def: sq > 0 ? 1 : 0, qty: sq > 0 ? 1 : 100,
+      key: "o" + p.code, src: "off", ref: String(p.code), code: String(p.code), name,
+      sub: [brands.split(",")[0].trim(), p.quantity, "código " + p.code].filter(Boolean).join(" · "),
+      n: { kcal: Math.round(kcal), p: get("proteins") || 0, c: get("carbohydrates") || 0, f: get("fat") || 0 },
+      m: microsOf(get),
+      units, def, qty,
     };
   }
 
