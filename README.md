@@ -10,6 +10,7 @@ App web para registrar calorías, macros (proteína, carbohidratos, grasa) y agu
 - **Millones de productos de marca** con búsqueda en línea en [Open Food Facts](https://world.openfoodfacts.org).
 - **Escáner de código de barras** con la cámara, o escribiendo el número.
 - **Añadir rápido** para cualquier comida con sus calorías y macros, y **Mis alimentos** para guardarla.
+- **Todos los nutrientes:** fibra, azúcares, grasas saturadas, mono y poliinsaturadas, colesterol, 10 minerales (sodio, potasio, calcio, hierro, magnesio, fósforo, zinc, cobre, manganeso, selenio), 13 vitaminas (A, C, D, E, K, B1, B2, B3, B5, B6, folato, B12 y colina) y carotenoides. Cada uno con su meta o límite diario para un hombre de 19 a 30 años; la fibra y la grasa saturada se ajustan a tus calorías.
 - Anillo de calorías, anillos de macros, agua, historial de 7 días y diario por comida (Desayuno, Comida, Cena, Snacks). Toca un alimento del diario para cambiar la cantidad.
 - Objetivos editables en Ajustes. Los macros se fijan como porcentaje de tus calorías (proteína y carbohidratos 4 cal/g, grasa 9 cal/g), así que si cambias las calorías los gramos se recalculan solos. Por defecto: 2110 cal con 34 % proteína (179 g), 39 % carbohidratos (206 g) y 27 % grasa (63 g), y 3,7 L de agua.
 - Modo claro y oscuro.

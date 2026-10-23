@@ -68,6 +68,33 @@ def num(v):
     return float(v) if v else 0.0
 
 
+# Micronutrients kept per food, in this order (key, ABBREV.txt column). Units follow SR28:
+# g for fiber/sugar/fatty acids, mg for minerals and most vitamins, µg for Se, A (RAE), D, K, folate (DFE), B12, carotenoids.
+MICROS = [
+    ("fib", 8), ("sug", 9), ("sat", 44), ("mono", 45), ("poly", 46), ("chol", 47),
+    ("na", 15), ("k", 14), ("ca", 10), ("fe", 11), ("mg", 12), ("phos", 13), ("zn", 16), ("cu", 17), ("mn", 18), ("se", 19),
+    ("va", 33), ("vc", 20), ("vd", 41), ("ve", 40), ("vk", 43), ("b1", 21), ("b2", 22), ("b3", 23), ("b5", 24), ("b6", 25),
+    ("fol", 29), ("b12", 31), ("chl", 30), ("bcar", 36), ("lyc", 38), ("lut", 39),
+]
+
+
+def compact(v):
+    """None when SR28 has no value; otherwise rounded to about three significant digits."""
+    v = v.strip()
+    if not v:
+        return None
+    x = float(v)
+    if x >= 100:
+        r = round(x)
+    elif x >= 10:
+        r = round(x, 1)
+    elif x >= 1:
+        r = round(x, 2)
+    else:
+        r = round(x, 3)
+    return int(r) if float(r).is_integer() else r
+
+
 def main(src, dst):
     src = Path(src)
     des = {}
@@ -98,13 +125,14 @@ def main(src, dst):
             int(ndb), es, en, group_codes.index(d["grp"]) if d["grp"] in GROUPS else -1,
             round(num(f[3])), round(num(f[4]), 1), round(num(f[7]), 1), round(num(f[5]), 1),
             round(num(f[8]), 1), round(num(f[9]), 1), round(num(f[15])),
-            portions, alt,
+            portions, alt, [compact(f[i]) for _, i in MICROS],
         ])
 
     out = {
-        "v": 1,
+        "v": 2,
         "source": "USDA National Nutrient Database for Standard Reference, Release 28 (public domain). Traducción automática al español.",
-        "fields": ["id", "es", "en", "group", "kcal", "protein", "carbs", "fat", "fiber", "sugar", "sodium_mg", "portions", "alt"],
+        "fields": ["id", "es", "en", "group", "kcal", "protein", "carbs", "fat", "fiber", "sugar", "sodium_mg", "portions", "alt", "micros"],
+        "micros": [k for k, _ in MICROS],
         "per": "100 g",
         "groups": [GROUPS[c] for c in group_codes],
         "foods": foods,

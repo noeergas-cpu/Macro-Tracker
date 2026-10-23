@@ -19,6 +19,28 @@
     return null;
   }
 
+  // Open Food Facts stores nutrients per 100 g in grams; convert to the units the app uses
+  const OFF_MICROS = [
+    ["fib", "fiber", 1], ["sug", "sugars", 1], ["sat", "saturated-fat", 1], ["mono", "monounsaturated-fat", 1],
+    ["poly", "polyunsaturated-fat", 1], ["chol", "cholesterol", 1e3], ["k", "potassium", 1e3], ["ca", "calcium", 1e3],
+    ["fe", "iron", 1e3], ["mg", "magnesium", 1e3], ["phos", "phosphorus", 1e3], ["zn", "zinc", 1e3], ["cu", "copper", 1e3],
+    ["mn", "manganese", 1e3], ["se", "selenium", 1e6], ["va", "vitamin-a", 1e6], ["vc", "vitamin-c", 1e3],
+    ["vd", "vitamin-d", 1e6], ["ve", "vitamin-e", 1e3], ["vk", "vitamin-k", 1e6], ["b1", "vitamin-b1", 1e3],
+    ["b2", "vitamin-b2", 1e3], ["b3", "vitamin-pp", 1e3], ["b5", "pantothenic-acid", 1e3], ["b6", "vitamin-b6", 1e3],
+    ["fol", "vitamin-b9", 1e6], ["b12", "vitamin-b12", 1e6], ["chl", "choline", 1e3],
+  ];
+  function microsOf(n) {
+    const m = {};
+    for (const [k, name, mult] of OFF_MICROS) {
+      const v = parseFloat(n[name + "_100g"]);
+      if (v >= 0 && isFinite(v)) m[k] = v * mult;
+    }
+    const na = parseFloat(n["sodium_100g"]), salt = parseFloat(n["salt_100g"]);
+    if (na >= 0) m.na = na * 1e3;
+    else if (salt >= 0) m.na = salt / 2.5 * 1e3;
+    return m;
+  }
+
   function toFood(p) {
     const n = p.nutriments || {};
     const kcal = kcalOf(n);
@@ -34,6 +56,7 @@
       key: "o" + p.code, src: "off", ref: String(p.code), name,
       sub: [brands.split(",")[0].trim(), p.quantity].filter(Boolean).join(" · ") || "Producto",
       n: { kcal: Math.round(kcal), p: +(n.proteins_100g || 0), c: +(n.carbohydrates_100g || 0), f: +(n.fat_100g || 0) },
+      m: microsOf(n),
       units, def: sq > 0 ? 1 : 0, qty: sq > 0 ? 1 : 100,
     };
   }

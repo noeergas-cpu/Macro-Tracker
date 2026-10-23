@@ -116,6 +116,38 @@ h1 { margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -.03em; line-
 .hhead span { font-size: 12.5px; color: var(--fg-2); }
 .hist svg { width: 100%; height: auto; display: block; overflow: visible; }
 
+/* nutrients */
+.nutri { padding: 16px 16px 8px; display: flex; flex-direction: column; gap: 12px; }
+.nutri .hhead { padding: 0; }
+.nurows { display: flex; flex-direction: column; gap: 12px; }
+.nurow { display: flex; flex-direction: column; gap: 6px; }
+.nurow .nuhead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.nurow .nm { font-size: 14px; font-weight: 600; }
+.nurow .nm small { font-weight: 500; color: var(--fg-3); font-size: 11.5px; margin-left: 6px; }
+.nurow .v { font-size: 13px; color: var(--fg-2); white-space: nowrap; }
+.nurow .v b { color: var(--fg); font-weight: 700; }
+.nubar { height: 6px; border-radius: 99px; background: var(--track); overflow: hidden; }
+.nubar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--carbs), color-mix(in srgb, var(--carbs) 70%, #fff)); transition: width .6s cubic-bezier(.2,.8,.2,1); }
+.nubar.limit i { background: var(--fat); }
+.nubar.over i { background: var(--warn); }
+.nurow.over .v b { color: var(--warn); }
+.nusum { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0 8px; border-top: 1px solid var(--line); text-align: left; }
+.nusum-t { font-size: 13px; color: var(--fg-2); }
+.nusum-t b { color: var(--fg); }
+.nusum-a { display: inline-flex; align-items: center; gap: 4px; font-size: 13.5px; font-weight: 600; color: var(--accent-2); white-space: nowrap; }
+.nugroup { display: flex; flex-direction: column; gap: 12px; }
+.nugroup + .nugroup { padding-top: 16px; border-top: 1px solid var(--line); }
+.nunote { margin: 0; font-size: 12.5px; color: var(--fg-3); line-height: 1.5; }
+.nucov { font-size: 13px; color: var(--fg-2); background: var(--field); border-radius: 12px; padding: 10px 12px; line-height: 1.45; }
+.fd-nutri, .more-fields { border: 1px solid var(--line); border-radius: 14px; padding: 0 12px; flex: none; }
+.fd-nutri summary, .more-fields summary { cursor: pointer; padding: 12px 0; font-size: 14px; font-weight: 600; color: var(--fg-2); }
+.more-fields .grid4 { padding-bottom: 12px; }
+.nugrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; padding-bottom: 12px; font-size: 13px; }
+.nugrid div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--line); padding: 4px 0; min-width: 0; }
+.nugrid span { color: var(--fg-2); overflow-wrap: anywhere; }
+.nugrid b { font-weight: 600; white-space: nowrap; }
+.nugrid .none { grid-column: 1 / -1; border: 0; color: var(--fg-3); }
+
 /* diary */
 .diary { display: flex; flex-direction: column; gap: 12px; }
 .hint { padding: 14px 16px; font-size: 14px; line-height: 1.45; color: var(--fg-2); }

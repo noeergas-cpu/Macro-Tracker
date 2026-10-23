@@ -1,6 +1,6 @@
 // Macro Tracker app: state, rendering and all interactions. Data lives in this device's localStorage.
 (function () {
-  const VERSION = "1.1.1";
+  const VERSION = "1.2.0";
   const KEY = "mt.v1", THEME_KEY = "mt.theme";
   // macros are a share of daily calories: protein and carbs 4 cal/g, fat 9 cal/g
   const DEFAULT_GOALS = { cal: 2110, pp: 34, pc: 39, pf: 27, water: 3700 };
@@ -81,8 +81,13 @@
   }
 
   function totals(date) {
-    const t = { cal: 0, p: 0, c: 0, f: 0, n: 0 };
-    for (const it of S.log) if (it.date === date) { t.cal += +it.cal || 0; t.p += +it.p || 0; t.c += +it.c || 0; t.f += +it.f || 0; t.n++; }
+    const t = { cal: 0, p: 0, c: 0, f: 0, n: 0, nu: {}, rich: 0 };
+    for (const it of S.log) {
+      if (it.date !== date) continue;
+      t.cal += +it.cal || 0; t.p += +it.p || 0; t.c += +it.c || 0; t.f += +it.f || 0; t.n++;
+      if (it.nu) for (const k in it.nu) t.nu[k] = (t.nu[k] || 0) + (+it.nu[k] || 0);
+      if (Nutri.detailed(it.nu)) t.rich++;
+    }
     return t;
   }
 
@@ -146,9 +151,60 @@
     $("wMinus").disabled = w <= 0;
     $("histGoal").textContent = `objetivo ${fmt(G.cal)}`;
 
+    renderNutri(t);
     renderChart();
     renderDiary();
+    if (!$("nutriSheet").hidden) renderNutriSheet();
   }
+
+  /* ---------- nutrients ---------- */
+  function nuRow(n, value, cal) {
+    const tg = Nutri.target(n, cal);
+    const unit = n.u;
+    if (!tg) {
+      return `<div class="nurow"><div class="nuhead"><span class="nm">${n.l}</span><span class="v num"><b>${Nutri.fmt(value)}</b> ${unit}</span></div></div>`;
+    }
+    const pct = tg.v ? value / tg.v * 100 : 0;
+    const over = tg.kind === "max" && value > tg.v;
+    const tag = tg.kind === "max" ? "máx." : "";
+    return `<div class="nurow${over ? " over" : ""}">
+      <div class="nuhead"><span class="nm">${n.l}${tag ? `<small>${tag}</small>` : ""}</span>
+      <span class="v num"><b>${Nutri.fmt(value)}</b> / ${Nutri.fmt(tg.v)} ${unit} · ${Math.round(pct)}%</span></div>
+      <div class="nubar${tg.kind === "max" ? " limit" : ""}${over ? " over" : ""}"><i style="width:${Math.min(100, pct)}%"></i></div>
+    </div>`;
+  }
+
+  function coverageText(t) {
+    if (!t.n) return "";
+    return t.rich === t.n ? "Datos completos" : `Datos completos en ${t.rich} de ${t.n}`;
+  }
+
+  function renderNutri(t) {
+    const cal = S.goals.cal;
+    $("nuTop").innerHTML = Nutri.TOP.map(k => nuRow(Nutri.BY_KEY[k], t.nu[k] || 0, cal)).join("");
+    const goals = Nutri.LIST.filter(n => (n.g === "min" || n.g === "vit") && n.goal);
+    const met = goals.filter(n => (t.nu[n.k] || 0) >= n.goal(cal)).length;
+    $("nuMet").textContent = `${met} de ${goals.length}`;
+    $("nuCoverage").textContent = coverageText(t);
+  }
+
+  function renderNutriSheet() {
+    const t = totals(view), cal = S.goals.cal;
+    $("nuDay").textContent = (view === today ? "Hoy, " : "") + parseD(view).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+    let h = "";
+    if (t.n && t.rich < t.n) {
+      h += `<div class="nucov">${t.rich} de ${t.n} alimentos de este día traen vitaminas y minerales. Los productos de marca y lo que añades rápido suelen traer solo fibra, azúcar, grasa saturada y sodio, así que el total real puede ser mayor.</div>`;
+    } else if (!t.n) {
+      h += `<div class="nucov">No hay alimentos registrados este día.</div>`;
+    }
+    for (const [g, label] of Nutri.GROUPS) {
+      h += `<div class="nugroup"><div class="label">${label}</div>` +
+        Nutri.LIST.filter(n => n.g === g).map(n => nuRow(n, t.nu[n.k] || 0, cal)).join("") + `</div>`;
+    }
+    h += `<p class="nunote">Las metas son las ingestas diarias recomendadas para un hombre de 19 a 30 años. Los límites (máx.) de sodio, grasa saturada y colesterol vienen de las guías alimentarias de EE. UU. La fibra y la grasa saturada se ajustan a tus calorías.</p>`;
+    $("nuList").innerHTML = h;
+  }
+  $("nuAll").onclick = () => { renderNutriSheet(); openSheet("nutriSheet"); };
 
   function renderChart() {
     const G = targets();
@@ -364,6 +420,11 @@
   let fd = null; // { food, unit, qty, meal, editId }
 
   function openFood(food, opts) {
+    // foods saved before nutrients existed get them from the local database
+    if (food.src === "usda" && !food.m) {
+      const fresh = Foods.byId(food.ref);
+      if (fresh) food = { ...food, m: fresh.m };
+    }
     const recent = S.recents.find(r => r.food.key === food.key);
     let unit = opts.unit ?? (recent ? recent.u : food.def ?? 0);
     if (!food.units[unit]) unit = 0;
@@ -384,7 +445,7 @@
 
   function calc() {
     const u = fd.food.units[fd.unit], k = (parseFloat(fd.qty) || 0) * u.f, n = fd.food.n;
-    return { cal: n.kcal * k, p: n.p * k, c: n.c * k, f: n.f * k };
+    return { cal: n.kcal * k, p: n.p * k, c: n.c * k, f: n.f * k, nu: Nutri.scale(fd.food.m, k) };
   }
   function servingText() {
     const u = fd.food.units[fd.unit], q = parseFloat(fd.qty) || 0;
@@ -397,6 +458,10 @@
     $("fdP").textContent = fmt1(r.p);
     $("fdC").textContent = fmt1(r.c);
     $("fdF").textContent = fmt1(r.f);
+    const known = Nutri.LIST.filter(n => r.nu[n.k] != null);
+    $("fdNutri").innerHTML = known.length
+      ? known.map(n => `<div><span>${n.l}</span><b class="num">${Nutri.fmt(r.nu[n.k])} ${n.u}</b></div>`).join("")
+      : `<div class="none">Este alimento no trae más nutrientes.</div>`;
     $("fdSave").disabled = !(parseFloat(fd.qty) > 0);
   }
   $("fdQty").addEventListener("input", () => { fd.qty = $("fdQty").value; updateFood(); });
@@ -424,7 +489,7 @@
   };
 
   function snapshot(food) {
-    return { key: food.key, src: food.src, ref: food.ref, name: food.name, sub: food.sub, n: food.n, units: food.units, def: food.def, qty: food.qty };
+    return { key: food.key, src: food.src, ref: food.ref, name: food.name, sub: food.sub, n: food.n, m: food.m || {}, units: food.units, def: food.def, qty: food.qty };
   }
   function remember(food, u, q) {
     S.recents = [{ food: snapshot(food), u, q: parseFloat(q) || 1, t: Date.now() }, ...S.recents.filter(r => r.food.key !== food.key)].slice(0, 40);
@@ -435,7 +500,7 @@
     const r = calc();
     const fields = {
       meal: fd.meal, name: fd.food.name, serving: servingText(),
-      cal: Math.round(r.cal), p: round1(r.p), c: round1(r.c), f: round1(r.f),
+      cal: Math.round(r.cal), p: round1(r.p), c: round1(r.c), f: round1(r.f), nu: r.nu,
       food: snapshot(fd.food), u: fd.unit, q: parseFloat(fd.qty) || 0,
     };
     if (fd.editId) {
@@ -458,7 +523,7 @@
     if (!it) return;
     const food = it.food || {
       key: "x" + it.id, src: "quick", name: it.name, sub: it.serving || "",
-      n: { kcal: +it.cal || 0, p: +it.p || 0, c: +it.c || 0, f: +it.f || 0 }, units: [{ l: it.serving || "porción", f: 1 }],
+      n: { kcal: +it.cal || 0, p: +it.p || 0, c: +it.c || 0, f: +it.f || 0 }, m: it.nu || {}, units: [{ l: it.serving || "porción", f: 1 }],
     };
     openFood(food, { meal: it.meal, editId: it.id, unit: it.food ? it.u : 0, qty: it.food ? it.q : 1 });
   }
@@ -483,12 +548,17 @@
     const serving = $("qkServing").value.trim() || "porción";
     const n = { kcal: Math.round(cal), p: round1(parseFloat($("qkP").value) || 0), c: round1(parseFloat($("qkC").value) || 0), f: round1(parseFloat($("qkF").value) || 0) };
     const meal = $("quickForm").dataset.meal || addMeal;
-    let food = { key: "q" + uid(), src: "quick", name, sub: serving, n, units: [{ l: serving, f: 1 }], def: 0, qty: 1 };
+    const m = {};
+    [["fib", "qkFib"], ["sug", "qkSug"], ["sat", "qkSat"], ["na", "qkNa"]].forEach(([k, id]) => {
+      const v = parseFloat($(id).value);
+      if (v >= 0) m[k] = Nutri.round(v);
+    });
+    let food = { key: "q" + uid(), src: "quick", name, sub: serving, n, m, units: [{ l: serving, f: 1 }], def: 0, qty: 1 };
     if ($("qkSave").checked) {
       food = { ...food, key: "c" + uid(), src: "custom", sub: serving };
       S.custom.unshift(food);
     }
-    S.log.push({ id: uid(), date: view, meal, name, serving, cal: n.kcal, p: n.p, c: n.c, f: n.f, food: snapshot(food), u: 0, q: 1 });
+    S.log.push({ id: uid(), date: view, meal, name, serving, cal: n.kcal, p: n.p, c: n.c, f: n.f, nu: { ...m }, food: snapshot(food), u: 0, q: 1 });
     save();
     closeSheet("quickSheet");
     closeSheet("addSheet");
@@ -563,7 +633,7 @@
   /* ---------- settings, backup ---------- */
   function b64encode(obj) { return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))); }
   function b64decode(str) { return JSON.parse(decodeURIComponent(escape(atob(str.replace(/\s+/g, ""))))); }
-  function slimItem(i) { return { id: i.id, date: i.date, meal: i.meal, name: i.name, serving: i.serving, cal: i.cal, p: i.p, c: i.c, f: i.f }; }
+  function slimItem(i) { return { id: i.id, date: i.date, meal: i.meal, name: i.name, serving: i.serving, cal: i.cal, p: i.p, c: i.c, f: i.f, nu: i.nu }; }
   function saveCode() { return "MT1:" + b64encode({ v: 1, log: S.log.map(slimItem), water: S.water, goals: S.goals }); }
   function cleanItem(i, fallbackDate) {
     const meal = MEAL_KEYS.includes(i.meal) ? i.meal : "snacks";
@@ -571,6 +641,7 @@
       id: String(i.id || uid()), date: /^\d{4}-\d{2}-\d{2}$/.test(i.date || "") ? i.date : fallbackDate, meal,
       name: String(i.name || "Alimento"), serving: i.serving ? String(i.serving) : "",
       cal: Math.round(+i.cal || 0), p: round1(+i.p || 0), c: round1(+i.c || 0), f: round1(+i.f || 0),
+      nu: Nutri.clean(i.nu),
     };
   }
   function msg(id, text, cls) { $(id).textContent = text; $(id).className = "formmsg " + (cls || ""); }
@@ -717,7 +788,22 @@
   }
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
+  // items logged before nutrients existed: fill them in from the local database
+  function backfillNutrients() {
+    let changed = false;
+    for (const it of S.log) {
+      if (it.nu || !it.food || it.food.src !== "usda") continue;
+      const fresh = Foods.byId(it.food.ref);
+      const unit = it.food.units && it.food.units[it.u];
+      if (!fresh || !unit) continue;
+      it.nu = Nutri.scale(fresh.m, (+it.q || 0) * unit.f);
+      it.food = { ...it.food, m: fresh.m };
+      changed = true;
+    }
+    if (changed) { save(); render(); }
+  }
+
   applyTheme();
   render();
-  Foods.load().catch(() => {});
+  Foods.load().then(backfillNutrients).catch(() => {});
 })();

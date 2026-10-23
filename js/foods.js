@@ -1,6 +1,6 @@
 // Offline food database (USDA SR28, Spanish names) and search.
 (function () {
-  const DATA_URL = "data/foods.json?v=1";
+  const DATA_URL = "data/foods.json?v=2";
   let db = null;        // { groups, foods: [{...}] }
   let loading = null;
 
@@ -20,14 +20,16 @@
 
   // Shared food shape used by the whole app:
   // { key, src, ref, name, sub, n: {kcal,p,c,f} per base, units: [{l, f}], def, qty }
-  function toFood(row, groups) {
-    const [id, es, en, g, kcal, p, c, f, , , , portions] = row;
+  function toFood(row, groups, microKeys) {
+    const [id, es, en, g, kcal, p, c, f, , , , portions, , micros] = row;
+    const m = {};
+    if (micros) microKeys.forEach((k, i) => { if (micros[i] != null) m[k] = micros[i]; });
     const units = [{ l: "g", f: 0.01, g: true }];
     for (const [grams, label] of portions) units.push({ l: unitLabel(label, grams), f: grams / 100 });
     const hasPortion = units.length > 1;
     return {
       key: "u" + id, src: "usda", ref: id, name: es, sub: (groups[g] || "") + " · " + en,
-      n: { kcal, p, c, f }, units, def: hasPortion ? 1 : 0, qty: hasPortion ? 1 : 100,
+      n: { kcal, p, c, f }, m, units, def: hasPortion ? 1 : 0, qty: hasPortion ? 1 : 100,
     };
   }
 
@@ -49,7 +51,7 @@
             len: es.length, group: row[3],
           };
         });
-        db = { groups: json.groups, foods };
+        db = { groups: json.groups, micros: json.micros || [], foods };
         return db;
       })
       .catch(err => { loading = null; throw err; });
@@ -108,13 +110,13 @@
       out.push([score, it]);
     }
     out.sort((a, b) => b[0] - a[0]);
-    return out.slice(0, limit || 40).map(([, it]) => toFood(it.row, db.groups));
+    return out.slice(0, limit || 40).map(([, it]) => toFood(it.row, db.groups, db.micros));
   }
 
   function byId(id) {
     if (!db) return null;
     const it = db.foods.find(x => x.row[0] === id);
-    return it ? toFood(it.row, db.groups) : null;
+    return it ? toFood(it.row, db.groups, db.micros) : null;
   }
 
   window.Foods = { load, search, byId, count: () => (db ? db.foods.length : 0), norm };

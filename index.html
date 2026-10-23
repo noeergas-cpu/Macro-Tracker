@@ -67,6 +67,15 @@
 
     <section class="card macros" aria-label="Macros" id="macros"></section>
 
+    <section class="card nutri" aria-label="Nutrientes">
+      <div class="hhead"><div class="label">Nutrientes</div><span id="nuCoverage"></span></div>
+      <div class="nurows" id="nuTop"></div>
+      <button class="nusum" id="nuAll">
+        <span class="nusum-t"><b id="nuMet">0 de 22</b> metas de vitaminas y minerales cumplidas</span>
+        <span class="nusum-a">Ver todos<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5 8 6 4.5 9.5"/></svg></span>
+      </button>
+    </section>
+
     <section class="card water" aria-label="Agua">
       <div class="wrow">
         <div class="drop"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.7S5.5 9.6 5.5 14.2a6.5 6.5 0 0 0 13 0C18.5 9.6 12 2.7 12 2.7Z"/></svg></div>
@@ -142,8 +151,26 @@
     </div>
     <div class="label">Comida</div>
     <div class="chips" id="fdMeal" role="radiogroup" aria-label="Comida"></div>
+    <details class="fd-nutri">
+      <summary>Nutrientes de esta cantidad</summary>
+      <div class="nugrid" id="fdNutri"></div>
+    </details>
     <div class="fd-per" id="fdPer"></div>
     <button class="pill primary big-btn" id="fdSave">Añadir</button>
+  </div>
+</div>
+
+<!-- All nutrients -->
+<div class="sheet" id="nutriSheet" role="dialog" aria-modal="true" aria-labelledby="nuTitle" hidden>
+  <div class="sheet-panel tall">
+    <div class="sheet-head">
+      <div class="fd-title">
+        <h2 id="nuTitle">Nutrientes</h2>
+        <div class="fd-sub" id="nuDay"></div>
+      </div>
+      <button class="close" data-close aria-label="Cerrar"><svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l6 6M9 3 3 9"/></svg></button>
+    </div>
+    <div class="scrollarea" id="nuList"></div>
   </div>
 </div>
 
@@ -163,6 +190,15 @@
         <label class="field"><span>Carbos g</span><input id="qkC" type="number" inputmode="decimal" min="0" step="any"></label>
         <label class="field"><span>Grasa g</span><input id="qkF" type="number" inputmode="decimal" min="0" step="any"></label>
       </div>
+      <details class="more-fields">
+        <summary>Más nutrientes (opcional)</summary>
+        <div class="grid4">
+          <label class="field"><span>Fibra g</span><input id="qkFib" type="number" inputmode="decimal" min="0" step="any"></label>
+          <label class="field"><span>Azúcares g</span><input id="qkSug" type="number" inputmode="decimal" min="0" step="any"></label>
+          <label class="field"><span>Grasa saturada g</span><input id="qkSat" type="number" inputmode="decimal" min="0" step="any"></label>
+          <label class="field"><span>Sodio mg</span><input id="qkNa" type="number" inputmode="decimal" min="0" step="any"></label>
+        </div>
+      </details>
       <div class="label">Comida</div>
       <div class="chips" id="qkMeal" role="radiogroup" aria-label="Comida"></div>
       <label class="check"><input id="qkSave" type="checkbox" checked> Guardar en Mis alimentos</label>
@@ -265,6 +301,7 @@
 
 <div class="toast" id="toast" role="status"><span id="toastMsg"></span><button id="toastAction" hidden>Deshacer</button></div>
 
+<script src="js/nutrients.js"></script>
 <script src="js/foods.js"></script>
 <script src="js/off.js"></script>
 <script src="js/scanner.js"></script>
