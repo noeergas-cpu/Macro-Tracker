@@ -1,6 +1,6 @@
 // Macro Tracker app: state, rendering and all interactions. Data lives in this device's localStorage.
 (function () {
-  const VERSION = "1.1.0";
+  const VERSION = "1.1.1";
   const KEY = "mt.v1", THEME_KEY = "mt.theme";
   // macros are a share of daily calories: protein and carbs 4 cal/g, fat 9 cal/g
   const DEFAULT_GOALS = { cal: 2110, pp: 34, pc: 39, pf: 27, water: 3700 };
@@ -133,6 +133,7 @@
         </svg><div class="pct num">${Math.round(v / goal * 100)}%</div></div>
         <div class="nm"><span class="dot" style="background:${m.color}"></span>${m.label}</div>
         <div class="g num">${fmt(v)} / ${fmt(G[m.k])} g</div>
+        <div class="gp num">${fmt1(S.goals["p" + m.k])} % de tus cal</div>
       </div>`;
     }).join("");
     requestAnimationFrame(() => requestAnimationFrame(() =>
@@ -613,6 +614,7 @@
     openSheet("settingsSheet");
   }
   $("settingsBtn").onclick = openSettings;
+  $("macros").onclick = openSettings;
   $("goalsForm").addEventListener("submit", e => {
     e.preventDefault();
     const v = readGoalsForm();
@@ -698,8 +700,20 @@
   setInterval(checkDay, 30000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) checkDay(); });
 
+  // Updates: check when the app opens or comes back to the front, and reload once when a new version takes over.
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+    const hadController = !!navigator.serviceWorker.controller;
+    let reloading = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!hadController || reloading) return;
+      reloading = true;
+      location.reload();
+    });
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
+        document.addEventListener("visibilitychange", () => { if (!document.hidden) reg.update().catch(() => {}); });
+      }).catch(() => {});
+    });
   }
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 

@@ -2,7 +2,7 @@
 
 App web para registrar calorías, macros (proteína, carbohidratos, grasa) y agua desde el teléfono. Se instala en la pantalla de inicio y funciona sin conexión.
 
-**Abrir la app:** https://noeergas-cpu.github.io/macro-tracker/
+**Abrir la app:** https://noeergas-cpu.github.io/Macro-Tracker/
 
 ## Qué incluye
 
@@ -22,6 +22,8 @@ App web para registrar calorías, macros (proteína, carbohidratos, grasa) y agu
 **Android (Chrome):** abre el enlace, toca el menú ⋮ y elige **Instalar app** o **Añadir a pantalla de inicio**.
 
 Usa siempre la app desde el icono. En iPhone, la app instalada guarda sus datos aparte de Safari.
+
+**Actualizaciones:** la app busca la versión nueva cada vez que la abres con conexión y se recarga sola. Puedes ver la versión al final de Ajustes.
 
 ## Tus datos
 
